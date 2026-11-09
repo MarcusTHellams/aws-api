@@ -1,0 +1,11 @@
+{
+  "TableName": "${TableName}",
+  "Key": {
+    "id": {
+      "S": "$util.escapeJavaScript($input.params().path.get('productId')).replaceAll("\\'","'")"
+    }
+  },
+  "ConsistentRead": true,
+  "ProjectionExpression": "#id, #name",
+  "ExpressionAttributeNames": { "#id": "id", "#name": "name" }
+}

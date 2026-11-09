@@ -1,0 +1,7 @@
+#set($item = $input.path('$.Item'))
+#if($item && !$item.isEmpty())
+{"product": $input.json('$.Item')}
+#else
+#set($context.responseOverride.status = 404)
+{"error": "Product not found"}
+#end
