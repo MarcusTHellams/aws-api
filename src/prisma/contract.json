@@ -1,0 +1,581 @@
+{
+  "schemaVersion": "1",
+  "targetFamily": "sql",
+  "target": "postgres",
+  "profileHash": "3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2",
+  "roots": {
+    "actors": {
+      "model": "Actors",
+      "namespace": "public"
+    },
+    "directors": {
+      "model": "Directors",
+      "namespace": "public"
+    },
+    "movies": {
+      "model": "Movies",
+      "namespace": "public"
+    },
+    "movies_actors": {
+      "model": "MoviesActors",
+      "namespace": "public"
+    }
+  },
+  "domain": {
+    "namespaces": {
+      "public": {
+        "models": {
+          "Actors": {
+            "fields": {
+              "actorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "dateOfBirth": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "firstName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "gender": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "moviesActors": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["actorId"],
+                  "targetFields": ["actorId"]
+                },
+                "to": {
+                  "model": "MoviesActors",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "actorId": {
+                  "column": "actor_id"
+                },
+                "dateOfBirth": {
+                  "column": "date_of_birth"
+                },
+                "firstName": {
+                  "column": "first_name"
+                },
+                "gender": {
+                  "column": "gender"
+                },
+                "lastName": {
+                  "column": "last_name"
+                }
+              },
+              "namespaceId": "public",
+              "table": "actors"
+            }
+          },
+          "Directors": {
+            "fields": {
+              "dateOfBirth": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "directorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "firstName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "nationality": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "movies": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["directorId"],
+                  "targetFields": ["directorId"]
+                },
+                "to": {
+                  "model": "Movies",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "dateOfBirth": {
+                  "column": "date_of_birth"
+                },
+                "directorId": {
+                  "column": "director_id"
+                },
+                "firstName": {
+                  "column": "first_name"
+                },
+                "lastName": {
+                  "column": "last_name"
+                },
+                "nationality": {
+                  "column": "nationality"
+                }
+              },
+              "namespaceId": "public",
+              "table": "directors"
+            }
+          },
+          "Movies": {
+            "fields": {
+              "ageCertificate": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "directorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "movieId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "movieLang": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "movieLength": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "movieName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "releaseDate": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "director": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": ["directorId"],
+                  "targetFields": ["directorId"]
+                },
+                "to": {
+                  "model": "Directors",
+                  "namespace": "public"
+                }
+              },
+              "moviesActors": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["movieId"],
+                  "targetFields": ["movieId"]
+                },
+                "to": {
+                  "model": "MoviesActors",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "ageCertificate": {
+                  "column": "age_certificate"
+                },
+                "directorId": {
+                  "column": "director_id"
+                },
+                "movieId": {
+                  "column": "movie_id"
+                },
+                "movieLang": {
+                  "column": "movie_lang"
+                },
+                "movieLength": {
+                  "column": "movie_length"
+                },
+                "movieName": {
+                  "column": "movie_name"
+                },
+                "releaseDate": {
+                  "column": "release_date"
+                }
+              },
+              "namespaceId": "public",
+              "table": "movies"
+            }
+          },
+          "MoviesActors": {
+            "fields": {
+              "actorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              },
+              "movieId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sql/varchar@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "actor": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": ["actorId"],
+                  "targetFields": ["actorId"]
+                },
+                "to": {
+                  "model": "Actors",
+                  "namespace": "public"
+                }
+              },
+              "movie": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": ["movieId"],
+                  "targetFields": ["movieId"]
+                },
+                "to": {
+                  "model": "Movies",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "actorId": {
+                  "column": "actor_id"
+                },
+                "movieId": {
+                  "column": "movie_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "movies_actors"
+            }
+          }
+        }
+      }
+    }
+  },
+  "storage": {
+    "namespaces": {
+      "public": {
+        "entries": {
+          "table": {
+            "actors": {
+              "columns": {
+                "actor_id": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "date_of_birth": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": true
+                },
+                "first_name": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": true
+                },
+                "gender": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "last_name": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": ["actor_id"],
+                "name": "actors_pk"
+              },
+              "uniques": []
+            },
+            "directors": {
+              "columns": {
+                "date_of_birth": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "director_id": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "first_name": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "last_name": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "nationality": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": ["director_id"],
+                "name": "directors_pk"
+              },
+              "uniques": []
+            },
+            "movies": {
+              "columns": {
+                "age_certificate": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "director_id": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "movie_id": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "movie_lang": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "movie_length": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "movie_name": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "release_date": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "movies_directors_fk",
+                  "onDelete": "restrict",
+                  "onUpdate": "restrict",
+                  "source": {
+                    "columns": ["director_id"],
+                    "namespaceId": "public",
+                    "tableName": "movies"
+                  },
+                  "target": {
+                    "columns": ["director_id"],
+                    "namespaceId": "public",
+                    "tableName": "directors"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": ["movie_id"],
+                "name": "movies_pk"
+              },
+              "uniques": []
+            },
+            "movies_actors": {
+              "columns": {
+                "actor_id": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                },
+                "movie_id": {
+                  "codecId": "sql/varchar@1",
+                  "dataType": "pg/varchar",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "movies_actors_actors_fk",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": ["actor_id"],
+                    "namespaceId": "public",
+                    "tableName": "movies_actors"
+                  },
+                  "target": {
+                    "columns": ["actor_id"],
+                    "namespaceId": "public",
+                    "tableName": "actors"
+                  }
+                },
+                {
+                  "index": {
+                    "primaryKey": true
+                  },
+                  "name": "movies_actors_movies_fk",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": ["movie_id"],
+                    "namespaceId": "public",
+                    "tableName": "movies_actors"
+                  },
+                  "target": {
+                    "columns": ["movie_id"],
+                    "namespaceId": "public",
+                    "tableName": "movies"
+                  }
+                }
+              ],
+              "indexes": [],
+              "primaryKey": {
+                "columns": ["movie_id", "actor_id"],
+                "name": "movies_actors_pk"
+              },
+              "uniques": [
+                {
+                  "columns": ["movie_id", "actor_id"],
+                  "name": "movies_actors_unique"
+                }
+              ]
+            }
+          }
+        },
+        "id": "public",
+        "kind": "postgres-schema"
+      }
+    },
+    "storageHash": "c4912cdc4bd6aa0dda426c92c670caa4972c256c8bfe07e0c7b9723cd25cc19d"
+  },
+  "capabilities": {
+    "postgres": {
+      "distinctOn": true,
+      "forKeyShare": true,
+      "forNoKeyUpdate": true,
+      "jsonAgg": true,
+      "lateral": true,
+      "limit": true,
+      "orderBy": true,
+      "returning": true
+    },
+    "sql": {
+      "checkConstraint": true,
+      "defaultInInsert": true,
+      "enums": true,
+      "forShare": true,
+      "forUpdate": true,
+      "insertOnConflictSkip": true,
+      "insertOnConflictTarget": true,
+      "insertOnConflictWithoutTarget": true,
+      "lateral": true,
+      "lockNowait": true,
+      "lockOf": true,
+      "lockSkipLocked": true,
+      "returning": true,
+      "scalarList": true
+    }
+  },
+  "extensions": {},
+  "meta": {},
+  "_generated": {
+    "warning": "⚠️  GENERATED FILE - DO NOT EDIT",
+    "message": "This file is automatically generated by \"prisma contract emit\".",
+    "regenerate": "To regenerate, run: prisma contract emit"
+  }
+}

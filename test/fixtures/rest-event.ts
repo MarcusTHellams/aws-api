@@ -1,10 +1,12 @@
 import type { APIGatewayProxyEvent } from 'aws-lambda';
 
-export function restEvent(path: string): APIGatewayProxyEvent {
+export function restEvent(path: string, proxy = false): APIGatewayProxyEvent {
   const segments = path.split('/').filter(Boolean);
   const resource =
     segments.length > 1
-      ? `/${segments[0]}/{${segments[0] === 'orders' ? 'orderId' : 'productId'}}`
+      ? proxy
+        ? `/${segments[0]}/{proxy+}`
+        : `/${segments[0]}/{${segments[0] === 'orders' ? 'orderId' : 'productId'}}`
       : path;
   return {
     resource,
@@ -14,7 +16,7 @@ export function restEvent(path: string): APIGatewayProxyEvent {
     multiValueHeaders: {},
     queryStringParameters: null,
     multiValueQueryStringParameters: null,
-    pathParameters: null,
+    pathParameters: proxy && segments.length > 1 ? { proxy: segments.slice(1).join('/') } : null,
     stageVariables: null,
     body: null,
     isBase64Encoded: false,

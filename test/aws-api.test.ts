@@ -26,7 +26,7 @@ describe('AWS API', () => {
     });
     template.hasResourceProperties('AWS::ApiGateway::Resource', { PathPart: 'health' });
     const methods = Object.values(template.findResources('AWS::ApiGateway::Method'));
-    expect(methods).toHaveLength(6);
+    expect(methods).toHaveLength(8);
     for (const method of methods) {
       expect(method['Properties']['AuthorizationType']).toBe('AWS_IAM');
     }
@@ -48,7 +48,7 @@ describe('AWS API', () => {
   });
 
   it('provides an invoke policy limited to this API health endpoint in prod', () => {
-    template.resourceCountIs('AWS::IAM::ManagedPolicy', 4);
+    template.resourceCountIs('AWS::IAM::ManagedPolicy', 5);
     template.hasResourceProperties('AWS::IAM::ManagedPolicy', {
       PolicyDocument: {
         Statement: [
@@ -77,58 +77,71 @@ describe('AWS API', () => {
     template.hasOutput('ApiInvokePolicyArn', { Value: Match.anyValue() });
   });
 
-  it('routes both product endpoints to one separate Lambda with scoped read access', () => {
-    template.resourceCountIs('AWS::Lambda::Function', 3);
-    const methods = Object.values(template.findResources('AWS::ApiGateway::Method'));
-    const productMethods = methods.filter((method) =>
-      JSON.stringify(method['Properties']['Integration']).includes('ProductsFunction'),
+  it.each([
+    ['products', 'Products'],
+    ['orders', 'Orders'],
+    ['movies', 'Movies'],
+  ])('proxies the %s feature to its own Lambda with scoped read access', (feature, name) => {
+    template.resourceCountIs('AWS::Lambda::Function', 4);
+    const resources = template.findResources('AWS::ApiGateway::Resource');
+    const featureId = Object.keys(resources).find(
+      (id) => resources[id]?.['Properties']['PathPart'] === feature,
     );
-    expect(productMethods).toHaveLength(2);
-    expect(productMethods[0]?.['Properties']['Integration']['Uri']).toEqual(
-      productMethods[1]?.['Properties']['Integration']['Uri'],
+    expect(featureId).toBeDefined();
+    const proxyId = Object.keys(resources).find(
+      (id) =>
+        resources[id]?.['Properties']['PathPart'] === '{proxy+}' &&
+        resources[id]?.['Properties']['ParentId']['Ref'] === featureId,
+    );
+    expect(proxyId).toBeDefined();
+    const methods = Object.values(template.findResources('AWS::ApiGateway::Method'));
+    const featureMethods = methods.filter((method) =>
+      JSON.stringify(method['Properties']['Integration']).includes(`${name}Function`),
+    );
+    expect(featureMethods).toHaveLength(2);
+    expect(featureMethods.map((method) => method['Properties']['ResourceId']['Ref'])).toEqual(
+      expect.arrayContaining([featureId, proxyId]),
+    );
+    for (const method of featureMethods) {
+      expect(method['Properties']['HttpMethod']).toBe('ANY');
+      expect(method['Properties']['AuthorizationType']).toBe('AWS_IAM');
+      expect(method['Properties']['Integration']['Type']).toBe('AWS_PROXY');
+    }
+    expect(featureMethods[0]?.['Properties']['Integration']['Uri']).toEqual(
+      featureMethods[1]?.['Properties']['Integration']['Uri'],
     );
     const policies = Object.values(template.findResources('AWS::IAM::ManagedPolicy'));
-    const productsPolicy = policies.find((policy) =>
-      policy['Properties']['Description'].includes('read products'),
+    const policy = policies.find((item) =>
+      item['Properties']['Description'].includes(`read ${feature}`),
     );
-    const statements = productsPolicy?.['Properties']['PolicyDocument']['Statement'];
+    const statements = policy?.['Properties']['PolicyDocument']['Statement'];
     expect(statements).toHaveLength(1);
     expect(statements[0]['Action']).toBe('execute-api:Invoke');
     expect(statements[0]['Resource']).toHaveLength(2);
-    const resources = JSON.stringify(statements[0]['Resource']);
-    expect(resources).toContain('/GET/products');
-    expect(resources).toContain('/GET/products/*');
-    expect(resources).not.toContain('/health');
-    template.hasOutput('ProductsReadPolicyArn', { Value: Match.anyValue() });
+    const arns = JSON.stringify(statements[0]['Resource']);
+    expect(arns).toContain(`/GET/${feature}`);
+    expect(arns).toContain(`/GET/${feature}/*`);
+    expect(arns).not.toContain('/health');
+    expect(arns).not.toContain('/*/');
+    template.hasOutput(`${name}ReadPolicyArn`, { Value: Match.anyValue() });
   });
 
-  it('routes both order endpoints to one separate Lambda with scoped read access', () => {
-    template.resourceCountIs('AWS::Lambda::Function', 3);
-    const methods = Object.values(template.findResources('AWS::ApiGateway::Method'));
-    const orderMethods = methods.filter((method) =>
-      JSON.stringify(method['Properties']['Integration']).includes('OrdersFunction'),
+  it('keeps feature routing out of API Gateway', () => {
+    const resources = Object.values(template.findResources('AWS::ApiGateway::Resource'));
+    expect(
+      resources.filter((resource) => resource['Properties']['PathPart'] === '{proxy+}'),
+    ).toHaveLength(3);
+    expect(resources.some((resource) => resource['Properties']['PathPart'] === '{orderId}')).toBe(
+      false,
     );
-    expect(orderMethods).toHaveLength(2);
-    expect(orderMethods[0]?.['Properties']['Integration']['Uri']).toEqual(
-      orderMethods[1]?.['Properties']['Integration']['Uri'],
-    );
-    const policies = Object.values(template.findResources('AWS::IAM::ManagedPolicy'));
-    const ordersPolicy = policies.find((policy) =>
-      policy['Properties']['Description'].includes('read orders'),
-    );
-    const statements = ordersPolicy?.['Properties']['PolicyDocument']['Statement'];
-    expect(statements).toHaveLength(1);
-    expect(statements[0]['Action']).toBe('execute-api:Invoke');
-    expect(statements[0]['Resource']).toHaveLength(2);
-    const resources = JSON.stringify(statements[0]['Resource']);
-    expect(resources).toContain('/GET/orders');
-    expect(resources).toContain('/GET/orders/*');
-    expect(resources).not.toContain('/health');
-    template.hasOutput('OrdersReadPolicyArn', { Value: Match.anyValue() });
+    // The direct DynamoDB route still uses its explicit productId parameter.
+    expect(
+      resources.filter((resource) => resource['Properties']['PathPart'] === '{productId}'),
+    ).toHaveLength(1);
   });
 
   it('integrates DynamoDB directly without adding a Lambda', () => {
-    template.resourceCountIs('AWS::Lambda::Function', 3);
+    template.resourceCountIs('AWS::Lambda::Function', 4);
     template.resourceCountIs('AWS::DynamoDB::GlobalTable', 1);
     template.hasResourceProperties('AWS::DynamoDB::GlobalTable', {
       BillingMode: 'PAY_PER_REQUEST',

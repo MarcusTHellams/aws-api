@@ -128,9 +128,10 @@ Unknown product IDs return HTTP 404 with `{"error":"Product not found"}`.
 `src/http/create-app.ts` supplies shared no-store headers and JSON error responses
 for future feature apps. Keep business logic inside each feature.
 
-API Gateway registers both GET methods explicitly, using the same Products Lambda.
-Both require IAM authentication and pass through the stage WAF. There is no global
-catch-all Lambda. Application tests use Hono's `app.request`; adapter tests also
+API Gateway forwards `ANY /products` and `ANY /products/{proxy+}` to the Products
+Lambda. Hono defines the individual routes and supported HTTP methods. Both gateway
+methods require IAM authentication and pass through the stage WAF. Each feature
+keeps its own Lambda. Application tests use Hono's `app.request`; adapter tests also
 exercise actual REST API event shapes, including the deployed stage prefix.
 
 Deployment also outputs `ProductsUrl` and `ProductsReadPolicyArn`. Attach the
@@ -139,11 +140,35 @@ The health policy still grants only health access. Use the signed curl example
 with `ProductsUrl` or `ProductsUrl/notebook` and credentials authorized for products.
 
 For another feature, create its own app and Lambda adapter, a separate
-`NodejsFunction`, and CDK methods. Reuse `createApp()` for common middleware.
+`NodejsFunction`, and a base method plus proxy resource in CDK. Reuse `createApp()`
+for common middleware.
 Each Lambda gets its own execution role; grant AWS resource permissions per feature.
-Adding a product endpoint requires a Hono route, a CDK method, and appropriate
-caller policy changes. Gateway-generated errors for unregistered methods use
-API Gateway's response format; Hono's JSON error handling applies inside the app.
+Adding an endpoint under an existing feature requires only a Hono route and a
+Lambda code update. Add caller permissions when introducing a new HTTP verb or
+restricting access to particular paths. Existing read policies allow GET on the
+feature base path and all its child paths; they do not grant write access.
+
+The same pattern applies to products, orders, and movies:
+
+```ts
+const moviesIntegration = new LambdaIntegration(movies, { allowTestInvoke: false });
+const moviesResource = api.root.addResource('movies');
+moviesResource.addMethod('ANY', moviesIntegration);
+moviesResource.addProxy({ defaultIntegration: moviesIntegration });
+```
+
+The base method is needed because `{proxy+}` matches one or more child path
+segments, so it does not match `/movies` itself. A request to
+`/movies/movie-1001` reaches the Movies app with its full path intact. Define
+`app.get('/movies/:movieId', ...)` in Hono; CDK needs no movieId resource.
+Unknown paths and unsupported methods under a feature reach Hono's JSON 404
+handler after gateway authorization. IAM policies still use the caller's actual
+HTTP verb (such as `GET`), even though the gateway method is `ANY`.
+
+API Gateway metrics and method settings now apply to the base/proxy methods
+rather than individual Hono routes. Use application logs or metrics for per-route
+visibility and Hono validation for request bodies. Health and the direct DynamoDB
+integration retain their explicit gateway routes.
 
 ## Orders feature
 
@@ -181,6 +206,52 @@ curl http://localhost:3000/orders/missing
 ```
 
 SAM does not enforce the deployed API's IAM authentication or WAF rules.
+
+## Movies feature
+
+Movies uses its own Hono app and Lambda, with the same base/proxy routing pattern.
+`GET /movies` lists sample movies; `GET /movies/movie-1001` returns one movie.
+Unknown IDs return HTTP 404 with `{"error":"Movie not found"}`.
+The sample data is in memory, with no external movie service or persistence.
+Deployment outputs `MoviesUrl` and `MoviesReadPolicyArn`. The read policy grants
+only GET access to `/movies` and its child paths.
+
+## PostgreSQL with SAM
+
+Set `DATABASE_URL` in the ignored `.env` file (see `.env.example`), then stop any
+existing SAM server and run:
+
+```sh
+vp run local
+```
+
+The local script defaults `DOCKER_HOST` to Docker Desktop's socket at
+`unix://${HOME}/.docker/run/docker.sock`. If you already set `DOCKER_HOST`, it
+preserves your value. Docker Desktop must be running.
+
+This synthesizes the Lambda bundles, generates an ignored `sam-env.local.json`
+from `.env`, and starts SAM with `--env-vars sam-env.local.json`. All Lambda
+functions receive the connection string through the shared `Parameters` block. The value is not copied into the CDK
+CloudFormation template or the bundled code. `dotenv/config` alone cannot load
+your host's `.env` inside SAM's Lambda container.
+
+When the URL uses localhost, 127.0.0.1, or ::1, the generator replaces that hostname
+with `host.docker.internal` for Docker Desktop on macOS. Other hosts stay as given.
+Postgres must accept connections from Docker; remote/private databases still need
+appropriate network access. Each Lambda template declares an empty
+`DATABASE_URL` for SAM to override. A deployed database connection must be configured
+separately before using the movies database route in AWS.
+
+To run the steps separately:
+
+```sh
+vp run synth
+vp run local:env
+sam local start-api --template cdk.out/AwsApiStack.template.json --env-vars sam-env.local.json --port 3000 --warm-containers eager
+```
+
+Restart SAM after changing `.env` so new containers receive the new value. Neither
+the generator nor synthesis connects to or migrates the database.
 
 ## Direct DynamoDB service integration example
 

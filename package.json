@@ -2,28 +2,38 @@
   "name": "aws-api",
   "version": "0.1.0",
   "scripts": {
-    "build": "tsc",
+    "build": "vp run contract:emit && tsc",
     "watch": "tsc -w",
     "test": "vp test",
     "cdk": "cdk",
     "prepare": "vp config",
     "check": "vp check --fix",
+    "fmt": "vp fmt --write",
+    "lint": "vp lint --fix",
     "synth": "cdk synth",
-    "diff": "cdk diff"
+    "diff": "cdk diff",
+    "contract:emit": "prisma contract emit",
+    "local:env": "vpx scripts/sam-env.ts",
+    "local": "vp run synth && vp run local:env && DOCKER_HOST=\"${DOCKER_HOST:-unix://${HOME}/.docker/run/docker.sock}\" sam local start-api --template cdk.out/AwsApiStack.template.json --env-vars sam-env.local.json --port 3000 --warm-containers eager"
   },
   "dependencies": {
     "@hono/aws-lambda": "^1.0.1",
+    "@prisma/orm-postgres": "8.0.0-rc.23",
     "aws-cdk-lib": "^2.275.0",
     "constructs": "^10.8.1",
-    "hono": "^4.13.16"
+    "dotenv": "^18.0.9",
+    "hono": "^4.13.16",
+    "http-codes": "^2.1.0"
   },
   "devDependencies": {
+    "@prisma/cli-engine": "0.9.0",
     "@swc/core": "^1.16.22",
     "@tsconfig/strictest": "^2.0.8",
     "@types/aws-lambda": "^8.10.164",
     "@types/node": "^26.6.6",
     "aws-cdk": "2.1148.0",
     "esbuild": "^0.28.2",
+    "prisma": "8.0.0-rc.33",
     "tsx": "^4.23.15",
     "typescript": "~7.0.2",
     "vite-plus": "catalog:"

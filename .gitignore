@@ -1,8 +1,15 @@
 *.js
 !jest.config.js
 *.d.ts
+!src/prisma/contract.d.ts
 node_modules
 
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+node_modules/
+dist/
+.env
+
+# Local SAM environment overrides contain credentials.
+sam-env.local.json

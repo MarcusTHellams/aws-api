@@ -1,0 +1,49 @@
+// use prisma-8
+// Contract inferred from the live database schema. Edit as needed, then run `prisma contract emit`.
+
+model Actors {
+  actorId      String(storage: varchar)  @id(map: "actors_pk") @map("actor_id")
+  firstName    String(storage: varchar)? @map("first_name")
+  lastName     String(storage: varchar)  @map("last_name")
+  gender       String(storage: varchar)
+  dateOfBirth  String(storage: varchar)? @map("date_of_birth")
+  moviesActors MoviesActors[]
+
+  @@map("actors")
+}
+
+model Directors {
+  directorId  String(storage: varchar) @id(map: "directors_pk") @map("director_id")
+  firstName   String(storage: varchar) @map("first_name")
+  lastName    String(storage: varchar) @map("last_name")
+  dateOfBirth String(storage: varchar) @map("date_of_birth")
+  nationality String(storage: varchar)
+  movies      Movies[]
+
+  @@map("directors")
+}
+
+model Movies {
+  movieId        String(storage: varchar) @id(map: "movies_pk") @map("movie_id")
+  movieName      String(storage: varchar) @map("movie_name")
+  movieLength    String(storage: varchar) @map("movie_length")
+  movieLang      String(storage: varchar) @map("movie_lang")
+  releaseDate    String(storage: varchar) @map("release_date")
+  ageCertificate String(storage: varchar) @map("age_certificate")
+  directorId     String(storage: varchar) @map("director_id")
+  moviesActors   MoviesActors[]
+  director       Directors                @relation(fields: [directorId], references: [directorId], onDelete: Restrict, onUpdate: Restrict, map: "movies_directors_fk", index: false)
+
+  @@map("movies")
+}
+
+model MoviesActors {
+  movieId String(storage: varchar) @map("movie_id")
+  actorId String(storage: varchar) @map("actor_id")
+  actor   Actors                   @relation(fields: [actorId], references: [actorId], onDelete: Cascade, onUpdate: Cascade, map: "movies_actors_actors_fk", index: false)
+  movie   Movies                   @relation(fields: [movieId], references: [movieId], onDelete: Cascade, onUpdate: Cascade, map: "movies_actors_movies_fk", index: "movies_actors_pk")
+
+  @@id([movieId, actorId], map: "movies_actors_pk")
+  @@unique([movieId, actorId], map: "movies_actors_unique")
+  @@map("movies_actors")
+}
